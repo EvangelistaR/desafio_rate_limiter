@@ -1,0 +1,28 @@
+services:
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      REDIS_ADDR: redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Run the tests inside Docker: docker compose run --rm test
+  test:
+    image: golang:1.26-alpine
+    profiles: ["test"]
+    working_dir: /src
+    volumes:
+      - .:/src
+    command: go test ./...
